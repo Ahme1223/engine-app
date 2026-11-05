@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(const EngineApp());
 
@@ -9,6 +11,13 @@ class Engine {
   final String location;
   final Color color;
   Engine(this.name, this.hours, this.status, this.location, this.color);
+
+  Map<String, dynamic> toJson() => {
+    'name': name, 'hours': hours, 'status': status, 'location': location, 'color': color.value,
+  };
+  factory Engine.fromJson(Map<String, dynamic> j) => Engine(
+    j['name'], j['hours'], j['status'], j['location'], Color(j['color']),
+  );
 }
 
 class EngineApp extends StatelessWidget {
@@ -31,11 +40,35 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Engine> engines = [
-    Engine('MWM TCG 2020', '12,540h', 'Running', 'أمدرمان', Colors.green),
-    Engine('Caterpillar 3516', '8,210h', 'Maintenance', 'أمدرمان', Colors.orange),
-    Engine('Cummins KTA50', '15,300h', 'Standby', 'الخرطوم', Colors.blue),
-  ];
+  List<Engine> engines = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEngines();
+  }
+
+  Future<void> _loadEngines() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString('engines');
+    if (data != null) {
+      final List list = jsonDecode(data);
+      setState(() => engines = list.map((e) => Engine.fromJson(e)).toList());
+    } else {
+      setState(() {
+        engines = [
+          Engine('MWM TCG 2020', '12,540h', 'Running', 'أمدرمان', Colors.green),
+          Engine('Caterpillar 3516', '8,210h', 'Maintenance', 'أمدرمان', Colors.orange),
+          Engine('Cummins KTA50', '15,300h', 'Standby', 'الخرطوم', Colors.blue),
+        ];
+      });
+    }
+  }
+
+  Future<void> _saveEngines() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('engines', jsonEncode(engines.map((e) => e.toJson()).toList()));
+  }
 
   void _addEngine() {
     String name = '';
@@ -54,9 +87,10 @@ class _HomePageState extends State<HomePage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (name.isNotEmpty) {
                 setState(() => engines.add(Engine(name, hours.isEmpty ? '0h' : hours, 'Running', 'أمدرمان', Colors.green)));
+                await _saveEngines();
               }
               Navigator.pop(ctx);
             },
@@ -65,6 +99,11 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
+  }
+
+  void _deleteEngine(int index) async {
+    setState(() => engines.removeAt(index));
+    await _saveEngines();
   }
 
   @override
@@ -81,7 +120,13 @@ class _HomePageState extends State<HomePage> {
               leading: Icon(Icons.settings, size: 40, color: e.color),
               title: Text('${e.name} - ${e.hours}'),
               subtitle: Text('${e.status} - ${e.location}'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () => _deleteEngine(i)),
+                  const Icon(Icons.arrow_forward_ios, size: 16),
+                ],
+              ),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => DetailPage(engine: e)));
               },
