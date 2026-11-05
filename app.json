@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "engine-app",
+    "slug": "engine-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "engineapp",
+    "platforms": ["android"],
+    "android": { "package": "com.engineapp.app" }
+  }
+}
