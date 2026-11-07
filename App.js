@@ -1,92 +1,76 @@
-import React, { useState } from 'react';
-import { 
- View, Text, FlatList, 
- TouchableOpacity, 
- StyleSheet, SafeAreaView 
-} from 'react-native';
 
-const ENGINES = [
- { id:'1', name:'Perkins 1104', 
-  type:'ديزل - 4 بستم', 
-  power:'100 HP', 
-  price:'2,500,000 SDG' },
- { id:'2', name:'Cummins 6BT', 
-  type:'ديزل - 6 بستم', 
-  power:'180 HP', 
-  price:'4,800,000 SDG' },
- { id:'3', name:'Yanmar TF120', 
-  type:'ديزل - 1 بستم', 
-  power:'12 HP', 
-  price:'950,000 SDG' },
-];
+ import React, { useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, Modal, StyleSheet, Alert } from 'react-native';
 
-export default function App(){
- const [sel,setSel]=useState(null);
- 
- if(sel){
-  return(
-   <SafeAreaView style={s.container}>
-    <TouchableOpacity 
-     onPress={()=>setSel(null)}
-     style={s.back}>
-     <Text style={s.backText}>← رجوع</Text>
-    </TouchableOpacity>
-    <Text style={s.title}>{sel.name}</Text>
-    <Text>{sel.type}</Text>
-    <Text>القدرة: {sel.power}</Text>
-    <Text style={s.price}>{sel.price}</Text>
-    
-    <View style={s.box3d}>
-     <Text style={s.boxText}>
-      هنا حتظهر المكنة 3D
-      لف بصباعك وتكبير
-     </Text>
-     <Text style={{fontSize:50}}>⚙️</Text>
+export default function App() {
+  const [engines, setEngines] = useState([
+    { id: '1', name: 'MWM TCG 2020', hours: '12,540h', status: 'Running', location: 'أمدرمان', color: '#4CAF50' },
+    { id: '2', name: 'Caterpillar 3516', hours: '8,210h', status: 'Maintenance', location: 'أمدرمان', color: '#FF9800' },
+    { id: '3', name: 'Toyota V8 1VD', hours: '0h', status: 'Running', location: 'أمدرمان', color: '#2196F3' },
+  ]);
+
+  const [modal, setModal] = useState(false);
+  const [name, setName] = useState('');
+  const [hours, setHours] = useState('');
+
+  const addEngine = () => {
+    if (!name) return Alert.alert('اكتب اسم المكنة');
+    setEngines([...engines, { id: Date.now().toString(), name, hours: hours || '0h', status: 'Running', location: 'أمدرمان', color: '#4CAF50' }]);
+    setName(''); setHours(''); setModal(false);
+  };
+
+  const deleteEngine = (id) => {
+    setEngines(engines.filter(e => e.id !== id));
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Engine Management - Omdur...</Text>
+      <FlatList
+        data={engines}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={{ fontSize: 28 }}>⚙️</Text>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.name}>{item.name} - {item.hours}</Text>
+              <Text style={styles.sub}>{item.status} - {item.location}</Text>
+            </View>
+            <TouchableOpacity onPress={() => deleteEngine(item.id)}>
+              <Text style={{ fontSize: 20 }}>🗑️</Text>
+            </TouchableOpacity>
+            <Text style={{ fontSize: 18 }}> › </Text>
+          </View>
+        )}
+      />
+      <TouchableOpacity style={styles.fab} onPress={() => setModal(true)}>
+        <Text style={{ fontSize: 28 }}>+</Text>
+      </TouchableOpacity>
+
+      <Modal visible={modal} transparent animationType="slide">
+        <View style={styles.modalBg}>
+          <View style={styles.modal}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>إضافة مكنة جديدة</Text>
+            <TextInput placeholder="اسم المكنة - مثلا Toyota V8" value={name} onChangeText={setName} style={styles.input} />
+            <TextInput placeholder="عدد الساعات - مثلا 5000h" value={hours} onChangeText={setHours} style={styles.input} />
+            <TouchableOpacity style={styles.btn} onPress={addEngine}><Text style={{ color: 'white', fontWeight: 'bold' }}>إضافة</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => setModal(false)}><Text style={{ marginTop: 12, color: 'red' }}>إلغاء</Text></TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
-    
-    <TouchableOpacity style={s.btn}>
-     <Text style={s.btnText}>تشغيل المكنة</Text>
-    </TouchableOpacity>
-   </SafeAreaView>
   );
- }
-
- return(
-  <SafeAreaView style={s.container}>
-   <Text style={s.header}>
-    سوق المكنات - السودان
-   </Text>
-   <FlatList
-    data={ENGINES}
-    keyExtractor={i=>i.id}
-    renderItem={({item})=>(
-     <TouchableOpacity 
-      style={s.card}
-      onPress={()=>setSel(item)}>
-      <Text style={s.cardT}>⚙️ {item.name}</Text>
-      <Text>{item.type}</Text>
-      <Text>القدرة: {item.power}</Text>
-      <Text style={s.price}>{item.price}</Text>
-      <Text style={s.view}>عرض 3D ←</Text>
-     </TouchableOpacity>
-    )}
-   />
-  </SafeAreaView>
- );
 }
 
-const s = StyleSheet.create({
- container:{flex:1,padding:16,backgroundColor:'#fff'},
- header:{fontSize:22,fontWeight:'bold',textAlign:'center',marginBottom:16,color:'#ff6d00'},
- card:{backgroundColor:'#fff3e0',padding:16,borderRadius:12,marginBottom:12},
- cardT:{fontSize:18,fontWeight:'bold'},
- price:{color:'green',fontWeight:'bold',marginTop:4},
- view:{color:'blue',marginTop:6,fontWeight:'bold'},
- title:{fontSize:24,fontWeight:'bold'},
- back:{padding:8,marginBottom:8},
- backText:{color:'blue',fontWeight:'bold',fontSize:16},
- box3d:{flex:1,backgroundColor:'#eee',borderRadius:12,justifyContent:'center',alignItems:'center',marginTop:12},
- boxText:{textAlign:'center',fontSize:16},
- btn:{backgroundColor:'#2e7d32',padding:16,borderRadius:12,alignItems:'center',marginTop:12},
- btnText:{color:'#fff',fontWeight:'bold'}
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff', padding: 12, paddingTop: 40 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F5F5', padding: 14, borderRadius: 12, marginBottom: 10 },
+  name: { fontSize: 18, fontWeight: '600' },
+  sub: { fontSize: 14, color: '#555', marginTop: 2 },
+  fab: { position: 'absolute', bottom: 30, right: 20, backgroundColor: '#E8D5FF', width: 60, height: 60, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modal: { backgroundColor: 'white', padding: 20, borderRadius: 16, alignItems: 'center' },
+  input: { borderWidth: 1, borderColor: '#ddd', width: '100%', padding: 12, borderRadius: 8, marginBottom: 10 },
+  btn: { backgroundColor: '#6200EE', padding: 12, borderRadius: 8, width: '100%', alignItems: 'center' },
 });
